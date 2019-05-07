@@ -1,6 +1,8 @@
 package com.group12.pickup;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -8,10 +10,14 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -36,6 +42,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.group12.pickup.Model.DirectionsJSONParser;
 import com.group12.pickup.Model.WindowInfoAdapter;
 
@@ -70,6 +79,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int PLACE_PICKER_REQUEST = 2;
+    private static final int CONFIRMATION_REQUEST = 3;
+
+    private String confirmed = "false";
+
+    private FirebaseFirestore database = FirebaseFirestore.getInstance();
+    private CollectionReference collectionReference = database.collection("journeys");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -251,7 +266,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                             } else {
                                 Log.d(TAG, "onComplete: current location is null");
-                                Toast.makeText(MapActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
+                                makeToast("Unable to Get Current Location");
                             }
                         }
                     });
@@ -307,6 +322,73 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 Place place = PlacePicker.getPlace(this, data);
                 moveCamera(place, DEFAULT_ZOOM);
             }
+        }
+
+        else if(requestCode == CONFIRMATION_REQUEST && resultCode == RESULT_OK) {
+
+            final String user = data.getStringExtra("user");
+            final String date = data.getStringExtra("date");
+            boolean requested = data.getBooleanExtra("requested", false);
+
+            if (requested) {
+
+                (new Thread() {
+
+                    @Override
+                    public void run() {
+
+                        while (confirmed.equals("false")) {
+
+                            try {
+                                sleep(5000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            Log.e("Checking", "Not Done");
+                            check(user, date);
+                        }
+
+                        Log.e("Checking", "Done");
+                        confirmed = "false";
+
+                        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
+                                .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
+                                .setContentTitle("Trip Confirmed")
+                                .setContentText("Car is on its way")
+                                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                .setAutoCancel(true);
+
+                        createNotificationChannel();
+
+                        //Add notification to our manager and start it
+                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
+                        notificationManager.notify(4, mBuilder.build());;
+
+                    }
+                }).start(); // Start this thread
+            }
+        }
+    }
+
+
+    private void makeToast(String message) {
+
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel("Channel", "PickUp", importance);
+            channel.setDescription("This is my Notification Channel");
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
         }
     }
 
@@ -407,8 +489,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             i.putExtra("Duration", duration);
                             i.putExtra("Latitude", myLocation.latitude);
                             i.putExtra("Longitude", myLocation.longitude);
+                            i.putExtra("requested", false);
 
-                            startActivity(i);
+                            startActivityForResult(i, CONFIRMATION_REQUEST);
 
                         } catch (IOException e) {
 
@@ -422,7 +505,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     @Override
                     public void onInfoWindowClick(Marker marker) {
 
-                        Toast.makeText(getBaseContext(),"Journey too Short or too Long",Toast.LENGTH_SHORT).show();
+                        makeToast("Journey too Short or too Long");
                     }
                 });
 
@@ -453,6 +536,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             mMap.addPolyline(lineOptions);
         }
     }
+
+
+    private void check(String user, String date) {
+
+        collectionReference
+                .whereEqualTo("user", user)
+                .whereEqualTo("date", date)
+                .get()
+                .addOnCompleteListener(this, new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("DataBaseRead", "Success");
+
+                            if (task.getResult().size() <= 1) {
+                                try {
+                                    confirmed = (String) task.getResult().getDocuments().get(0).getData().get("confirmed");
+                                } catch(Exception e) {
+                                    Log.e("Checking Confirmation", "Failed");
+                                }
+                            }
+                        } else {
+                            Log.e("DataBaseRead", "Failed");
+                        }
+
+                    }
+                });
+    }
+
 
     private String getDirectionsUrl(LatLng origin, LatLng dest) {
 

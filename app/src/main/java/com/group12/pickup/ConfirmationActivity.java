@@ -2,19 +2,28 @@ package com.group12.pickup;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.group12.pickup.Model.Car;
 import com.group12.pickup.Model.DirectionsJSONParser;
+import com.stripe.android.Stripe;
+import com.stripe.android.TokenCallback;
+import com.stripe.android.model.Card;
+import com.stripe.android.model.Token;
+import com.stripe.android.view.CardInputWidget;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -28,27 +37,38 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 
 public class ConfirmationActivity extends AppCompatActivity {
 
-    LatLng myLocation;
-    TextView details;
+    private LatLng myLocation;
+    private TextView details;
+    private String TAG = "Confirmation";
+    private String estimatedWait = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_confirmation);
 
-        Intent i = getIntent();
-        String collectionDetails = i.getStringExtra("Collection");
-        String destinationDetails = i.getStringExtra("Destination");
-        String distance = i.getStringExtra("Distance");
-        String duration = i.getStringExtra("Duration");
+        final Intent i = getIntent();
+        final String collectionDetails = i.getStringExtra("Collection");
+        final String destinationDetails = i.getStringExtra("Destination");
+        final String distance = i.getStringExtra("Distance");
+        final String duration = i.getStringExtra("Duration");
         double lat = i.getDoubleExtra("Latitude", 0);
         double lng = i.getDoubleExtra("Longitude", 0);
+
+        int number = 4;
+        if(duration.contains("mins"))
+            number = 5;
+
+        final double price = round(Double.valueOf(duration.substring(0, duration.length()-number)) * 1.25, 2);
 
         myLocation = new LatLng(lat, lng);
 
@@ -56,14 +76,9 @@ public class ConfirmationActivity extends AppCompatActivity {
         TextView destination = findViewById(R.id.destination);
         details = findViewById(R.id.details);
 
-        int number = 4;
-        if(duration.contains("mins"))
-            number = 5;
-
         collection.setText(collectionDetails.replace(", ", ",\n"));
         destination.setText(destinationDetails.replace(", ", ",\n"));
-        details.setText("Distance: " + distance + "\nCost: €" +
-            round(Double.valueOf(duration.substring(0, duration.length()-number)) * 1.25, 2) +
+        details.setText("Distance: " + distance + "\nCost: €" + price +
                 "\nEstimated Driving Time: " + duration);
 
         getNearestFree();
@@ -73,7 +88,60 @@ public class ConfirmationActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                CardInputWidget cardInput = findViewById(R.id.card_input_widget);
 
+                Card card = cardInput.getCard();
+
+                if (card == null) {
+                    Toast.makeText(getBaseContext(),"Invalid Card Data",Toast.LENGTH_SHORT).show();
+                }
+
+                else {
+
+                    Stripe stripe = new Stripe(getBaseContext(), "pk_test_TYooMQauvdEDq54NiTphI7jx");
+                    stripe.createToken(
+                            card,
+                            new TokenCallback() {
+                                public void onSuccess(Token token) {
+
+                                    FirebaseFirestore database = FirebaseFirestore.getInstance();
+                                    CollectionReference collectionReference = database.collection("journeys");
+                                    FirebaseAuth auth = FirebaseAuth.getInstance();
+                                    FirebaseUser user = auth.getCurrentUser();
+
+                                    DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy 'at' HH:mm:ss");
+                                    String date = df.format(Calendar.getInstance().getTime());
+
+                                    HashMap<String, String> documentToAdd = new HashMap<>();
+
+                                    documentToAdd.put("user", user.getEmail());
+                                    documentToAdd.put("collection", collectionDetails);
+                                    documentToAdd.put("destination", destinationDetails);
+                                    documentToAdd.put("distance", distance);
+                                    documentToAdd.put("estimatedWait", estimatedWait);
+                                    documentToAdd.put("estimatedDrive", duration);
+                                    documentToAdd.put("price", String.valueOf(price));
+                                    documentToAdd.put("tokenID", token.getId());
+                                    documentToAdd.put("date", date);
+                                    documentToAdd.put("confirmed", "false");
+
+                                    collectionReference.add(documentToAdd);
+
+                                    i.putExtra("requested", true);
+                                    i.putExtra("user", user.getEmail());
+                                    i.putExtra("date", date);
+
+                                    setResult(RESULT_OK, getIntent());
+                                    finish();
+                                }
+                                public void onError(Exception error) {
+
+                                    // Show localized error message
+                                    Log.e(TAG,"Failed to get stripe Token");
+                                }
+                            }
+                    );
+                }
             }
         });
     }
@@ -143,6 +211,7 @@ public class ConfirmationActivity extends AppCompatActivity {
             }
         }.execute();
     }
+
 
     /******************************************
      *          Estimating Wait Time          *
@@ -216,7 +285,8 @@ public class ConfirmationActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<List<HashMap<String, String>>> result) {
 
-            details.setText(details.getText() + "\nEstimated Wait: " + result.get(0).get(0).get("duration"));
+            estimatedWait = result.get(0).get(0).get("duration");
+            details.setText(details.getText() + "\nEstimated Wait: " + estimatedWait);
         }
     }
 

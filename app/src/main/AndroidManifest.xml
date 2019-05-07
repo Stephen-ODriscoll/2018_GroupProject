@@ -41,7 +41,7 @@
         <activity
             android:name=".MapActivity"
             android:label="@string/title_activity_navigation"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,7 +50,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".Drawer" />
-        <activity android:name=".ConfirmationActivity"></activity>
+        <activity android:name=".ConfirmationActivity" />
     </application>
 
 </manifest>

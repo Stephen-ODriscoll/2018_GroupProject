@@ -68,8 +68,10 @@ public class Drawer extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_location) {
-            // Handle the camera action
+
+
         } else if (id == R.id.nav_price) {
+
 
         } else if (id == R.id.nav_payments) {
 

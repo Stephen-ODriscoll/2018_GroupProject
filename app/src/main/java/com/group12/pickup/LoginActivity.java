@@ -68,7 +68,6 @@ public class LoginActivity extends AppCompatActivity {
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                     toastMessage("Successfully signed out.");
                 }
-                // ...
             }
         };
 
@@ -178,7 +177,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-    private void signUpViaGoogle() {
+    private void signInViaGoogle() {
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -201,8 +200,6 @@ public class LoginActivity extends AppCompatActivity {
         documentToAdd.put("email", email);
 
         collectionReference.add(documentToAdd);
-
-
     }
 
     private String name = null;
