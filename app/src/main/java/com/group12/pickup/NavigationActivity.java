@@ -1,6 +1,7 @@
 package com.group12.pickup;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -24,6 +25,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.AutocompletePrediction;
@@ -31,16 +34,19 @@ import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBufferResponse;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.group12.pickup.Model.PlaceInfo;
+import com.group12.pickup.Model.WindowInfoAdapter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,17 +57,19 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
     private Drawer drawer;
     private GoogleMap mMap;
     private AutoCompleteTextView search;
-    private ImageView gps;
+    private ImageView gps, info, picker;
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private PlaceAutocompleteAdapter autocomplete;
     private GeoDataClient geoDataClient;
     private PlaceInfo placeInfo;
+    private Marker marker;
     private static final float DEFAULT_ZOOM = 15f;
     private static final String TAG = "MapActivity";
 
     private Boolean mLocationPermissionsGranted = false;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private static final int PLACE_PICKER_REQUEST = 1;
 
     private static final LatLngBounds bounds = new LatLngBounds(new LatLng(-40, -168), new LatLng(71, 136));
 
@@ -97,12 +105,12 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        getDeviceLocation();
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
+        getDeviceLocation();
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
     }
@@ -115,9 +123,7 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
         mapFragment.getMapAsync(NavigationActivity.this);
 
         search = findViewById(R.id.search);
-
         search.setOnItemClickListener(autoCompleteListener);
-
         search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
 
             @Override
@@ -147,6 +153,47 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
 
                 Log.d(TAG, "onClick: clicked gps icon");
                 getDeviceLocation();
+            }
+        });
+
+
+        picker = findViewById(R.id.place_picker);
+        picker.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+
+                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+                try {
+                    startActivityForResult(builder.build(NavigationActivity.this), PLACE_PICKER_REQUEST);
+
+                } catch (Exception e) {
+
+                    Log.e(TAG, "Google Play Services Error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        info = findViewById(R.id.ic_info);
+        info.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+
+                try {
+
+                    if(marker.isInfoWindowShown())
+                        marker.hideInfoWindow();
+
+                    else
+                        marker.showInfoWindow();
+
+                } catch (NullPointerException e) {
+
+                    Log.e(TAG, "NullPointerException: " + e.getMessage());
+                }
             }
         });
     }
@@ -220,10 +267,43 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
         }
     }
 
+
+    private void moveCamera(LatLng latLng, float zoom, PlaceInfo placeInfo) {
+        Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+
+        mMap.clear();
+
+        mMap.setInfoWindowAdapter(new WindowInfoAdapter(this));
+
+        if(placeInfo != null)
+            try {
+
+            String info = placeInfo.toString();
+
+            MarkerOptions options = new MarkerOptions()
+                    .position(latLng)
+                    .title(placeInfo.getName())
+                    .snippet(info);
+
+            marker = mMap.addMarker(options);
+
+            } catch (NullPointerException e) {
+
+                Log.e(TAG, "NullPointerException: " + e.getMessage());
+            }
+
+         else {
+
+            mMap.addMarker(new MarkerOptions().position(latLng));
+        }
+    }
+
+
     private void getLocationPermission() {
+
         Log.d(TAG, "getLocationPermission: getting location permissions");
-        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION};
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
 
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -244,7 +324,6 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
 
         if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
 
-            mLocationPermissionsGranted = false;
             Log.d(TAG, "onRequestPermissionsResult: permission failed");
             return;
         }
@@ -268,39 +347,56 @@ public class NavigationActivity extends AppCompatActivity implements OnMapReadyC
             final AutocompletePrediction item = autocomplete.getItem(i);
             final String placeId = item.getPlaceId();
 
-            try {
-                geoDataClient.getPlaceById(placeId).addOnCompleteListener(new OnCompleteListener<PlaceBufferResponse>() {
+            geoDataClient.getPlaceById(placeId).addOnCompleteListener(updatePlaceDetails);
+        }
+    };
 
-                    @Override
-                    public void onComplete(@NonNull Task<PlaceBufferResponse> task) {
 
-                        if (task.isSuccessful()) {
-                            PlaceBufferResponse places = task.getResult();
-                            final Place place = places.get(0);
+    private OnCompleteListener updatePlaceDetails = new OnCompleteListener<PlaceBufferResponse>() {
 
-                            placeInfo = new PlaceInfo(place.getName().toString(),
-                                    place.getAddress().toString(),
-                                    place.getPhoneNumber().toString(),
-                                    place.getId(),
-                                    place.getWebsiteUri(),
-                                    place.getLatLng(),
-                                    place.getRating());
+        @Override
+        public void onComplete(@NonNull Task<PlaceBufferResponse> task) {
 
-                            moveCamera(placeInfo.getLatLng(), DEFAULT_ZOOM, placeInfo.getName());
+            if (task.isSuccessful()) {
+                PlaceBufferResponse places = task.getResult();
+                final Place place = places.get(0);
 
-                            Log.i(TAG, "Place found:\n" + placeInfo.toString());
-                            places.release();
-                        } else {
-                            Log.e(TAG, "Place not found.");
-                        }
-                    }
-                });
+                placeInfo = new PlaceInfo(place.getName().toString(),
+                        place.getAddress().toString(),
+                        place.getPhoneNumber().toString(),
+                        place.getId(),
+                        place.getWebsiteUri(),
+                        place.getLatLng(),
+                        place.getRating());
 
-            } catch(SecurityException e) {
+                moveCamera(placeInfo.getLatLng(), DEFAULT_ZOOM, placeInfo);
 
-                //This will NEVER throw an exception. Permission is gotten on startup. Android sucks.
+                Log.i(TAG, "Place found:\n" + placeInfo.toString());
+                places.release();
+            } else {
+                Log.e(TAG, "Place not found.");
             }
         }
     };
+
+
+    /****************************************************
+     *               Google Place Picker               *
+     ****************************************************/
+
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == PLACE_PICKER_REQUEST) {
+
+            if (resultCode == RESULT_OK) {
+
+                Place place = PlacePicker.getPlace(this, data);
+                geoDataClient.getPlaceById(place.getId()).addOnCompleteListener(updatePlaceDetails);
+
+                //Tutorial stupid, you already have place but we use it to search for that place again
+            }
+        }
+    }
 
 }
