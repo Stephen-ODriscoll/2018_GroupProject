@@ -1,6 +1,5 @@
 package com.group12.pickup;
 
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -21,10 +20,9 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
             }
         });
-
     }
 }
 

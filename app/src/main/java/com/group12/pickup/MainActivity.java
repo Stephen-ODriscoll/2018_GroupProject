@@ -162,6 +162,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void addButtons() {
 
+        Button logIn = findViewById(R.id.logIn);
+        logIn.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            }
+        });
+
         Button selectDestination = findViewById(R.id.select_destination);
         selectDestination.setOnClickListener(new View.OnClickListener() {
 
