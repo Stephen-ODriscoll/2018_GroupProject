@@ -54,7 +54,6 @@
 
         <activity android:name=".LoginActivity"/>
         <activity android:name=".Drawer" />
-        <activity android:name=".Map" />
     </application>
 
 </manifest>
