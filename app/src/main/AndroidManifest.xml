@@ -53,6 +53,8 @@
         <activity android:name=".ConfirmationActivity" />
         <activity android:name=".RegisterActivity" />
         <activity android:name=".TripsActivity" />
+        <activity android:name=".TripDetailsActivity" />
+        <activity android:name=".ReviewActivity"></activity>
     </application>
 
 </manifest>

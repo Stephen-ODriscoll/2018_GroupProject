@@ -1,8 +1,10 @@
 package com.group12.pickup;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -12,7 +14,6 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -26,6 +27,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -61,14 +63,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-
-import static java.lang.Thread.sleep;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private Marker pickupMarker;
     private Marker destinationMarker;
     private static final float DEFAULT_ZOOM = 15f;
     private static final String TAG = "Map";
@@ -275,7 +273,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                             Log.e(TAG, "Currect Location Task Returned Null Pointer");
                                     }
 
-
                                     if(first) {
 
                                         Log.d(TAG, "moveCamera: moving the camera to: lat: " + myLocation.latitude + ", lng: " + myLocation.longitude);
@@ -299,6 +296,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
 
         }).start();
+    }
+
+
+    public void displayTrips() {
+
+        startActivity(new Intent(MapActivity.this, TripsActivity.class));
+    }
+
+    public void rateReview() {
+
+        startActivity(new Intent(MapActivity.this, ReviewActivity.class));
     }
 
 
@@ -344,7 +352,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .snippet("Alternate Pickup")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
 
-        pickupMarker = mMap.addMarker(options);
+        mMap.addMarker(options);
     }
 
 
@@ -367,7 +375,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     .snippet("Alternate Pickup")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
 
-            pickupMarker = mMap.addMarker(options);
+            mMap.addMarker(options);
         }
 
         MarkerOptions options = new MarkerOptions()
@@ -447,7 +455,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             final String user = data.getStringExtra("user");
             final String date = data.getStringExtra("date");
+            final String license = data.getStringExtra("license");
             boolean requested = data.getBooleanExtra("requested", false);
+
+            mMap.setInfoWindowAdapter(new WindowInfoAdapter(this));
 
             mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
                 @Override
@@ -484,7 +495,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
                                 .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
                                 .setContentTitle("Trip Status")
-                                .setContentText("Arrived at Destination")
+                                .setContentText("Arrived at Destination, review your trip from the trips menu")
                                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                                 .setAutoCancel(true);
 
@@ -493,7 +504,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         //Add notification to our manager and start it
                         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
                         notificationManager.notify(4, mBuilder.build());
-
                     }
 
                     private void notify(String status) {
@@ -509,7 +519,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
                                     .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
                                     .setContentTitle("Trip Status")
-                                    .setContentText("Car is en route to pickup")
+                                    .setContentText("Car is en route to pickup, License: " + license)
                                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                                     .setAutoCancel(true);
 

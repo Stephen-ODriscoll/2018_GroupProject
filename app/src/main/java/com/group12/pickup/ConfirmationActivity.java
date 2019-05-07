@@ -61,6 +61,8 @@ public class ConfirmationActivity extends AppCompatActivity {
     private String estimatedWait = "";
     private Spinner dropdown;
 
+    private boolean submitted = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,7 +120,11 @@ public class ConfirmationActivity extends AppCompatActivity {
                     Toast.makeText(getBaseContext(),"Select Vehicle Type",Toast.LENGTH_SHORT).show();
                 }
 
+                else if(submitted) {}
+
                 else {
+
+                    submitted = true;
 
                     Stripe stripe = new Stripe(getBaseContext(), "pk_test_TYooMQauvdEDq54NiTphI7jx");
                     stripe.createToken(
@@ -137,6 +143,7 @@ public class ConfirmationActivity extends AppCompatActivity {
                                     HashMap<String, String> documentToAdd = new HashMap<>();
 
                                     documentToAdd.put("car", nearest.getName());
+                                    documentToAdd.put("license", nearest.getLicense());
                                     documentToAdd.put("type", nearest.getType());
                                     documentToAdd.put("user", user.getEmail());
                                     documentToAdd.put("collection", collectionDetails);
@@ -156,6 +163,7 @@ public class ConfirmationActivity extends AppCompatActivity {
                                     i.putExtra("requested", true);
                                     i.putExtra("user", user.getEmail());
                                     i.putExtra("date", date);
+                                    i.putExtra("license", nearest.getLicense());
 
                                     setResult(RESULT_OK, getIntent());
                                     finish();

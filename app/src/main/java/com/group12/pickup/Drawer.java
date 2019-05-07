@@ -87,10 +87,10 @@ public class Drawer extends AppCompatActivity
             map.estimate();
 
         } else if (id == R.id.nav_trips) {
-
-            startActivity(new Intent(this, TripsActivity.class));
+            map.displayTrips();
 
         } else if (id == R.id.nav_review) {
+            map.rateReview();
 
         } else if (id == R.id.nav_logout) {
 

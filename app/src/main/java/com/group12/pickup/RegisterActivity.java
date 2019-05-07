@@ -12,11 +12,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -51,6 +54,9 @@ public class RegisterActivity extends AppCompatActivity {
 
                 else if(email.equals(""))
                     emailInput.setHintTextColor(Color.RED);
+
+                else if(!validate(email))
+                    Toast.makeText(getBaseContext(), "Email not Valid", Toast.LENGTH_SHORT).show();
 
                 else if (password.equals(""))
                     passwordInput.setHintTextColor(Color.RED);
@@ -111,5 +117,14 @@ public class RegisterActivity extends AppCompatActivity {
         documentToAdd.put("password", password);
 
         collectionReference.add(documentToAdd);
+    }
+
+    public static final Pattern VALID_EMAIL_ADDRESS_REGEX =
+            Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
+    public static boolean validate(String emailStr) {
+
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
+        return matcher.find();
     }
 }

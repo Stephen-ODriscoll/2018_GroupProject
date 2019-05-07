@@ -26,6 +26,9 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class LoginActivity extends AppCompatActivity {
 
     private final String TAG = "LoginActivity";
@@ -85,6 +88,9 @@ public class LoginActivity extends AppCompatActivity {
 
                 if(email.equals(""))
                     emailInput.setHintTextColor(Color.RED);
+
+                else if(!validate(email))
+                    Toast.makeText(getBaseContext(), "Email not Valid", Toast.LENGTH_SHORT).show();
 
                 else if (password.equals(""))
                     passwordInput.setHintTextColor(Color.RED);
@@ -213,6 +219,15 @@ public class LoginActivity extends AppCompatActivity {
                 Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
             }
         }
+    }
+
+    private static final Pattern VALID_EMAIL_ADDRESS_REGEX =
+            Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
+    private static boolean validate(String emailStr) {
+
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
+        return matcher.find();
     }
 
 
