@@ -19,34 +19,36 @@
         tools:layout_editor_absoluteY="102dp" />
 
     <RelativeLayout
+        android:id="@+id/relative"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="15dp"
         android:background="@drawable/white_border"
-        android:id="@+id/relative">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
+            android:id="@+id/ic_magnify"
             android:layout_width="15dp"
             android:layout_height="15dp"
-            android:id="@+id/ic_magnify"
             android:layout_centerVertical="true"
             android:layout_marginStart="10dp"
-            android:src="@drawable/ic_magnify"
-            android:imeOptions="actionSearch"/>
+            android:imeOptions="actionSearch"
+            android:src="@drawable/ic_magnify" />
 
-        <EditText
+        <AutoCompleteTextView
+            android:id="@+id/search"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_toEndOf="@+id/ic_magnify"
-            android:layout_centerVertical="true"
-            android:textSize="15sp"
-            android:textColor="#000"
-            android:id="@+id/search"
+            android:layout_alignStart="@+id/ic_magnify"
+            android:layout_marginStart="10dp"
             android:backgroundTint="@null"
             android:hint="Enter Address, City or Zip Code"
-            />
+            android:textColor="#000"
+            android:textSize="15sp" />
 
     </RelativeLayout>
 
