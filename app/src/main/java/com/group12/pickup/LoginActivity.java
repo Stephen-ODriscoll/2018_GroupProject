@@ -21,15 +21,6 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                startActivity(new Intent(LoginActivity.this, MapsActivity.class));
-            }
-        });
-
-        register.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
                 startActivity(new Intent(LoginActivity.this, NavigationActivity.class));
             }
         });
