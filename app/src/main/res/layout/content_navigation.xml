@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context=".NavigationActivity"
+    tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_navigation">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,76 +14,45 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MapsActivity"
+        tools:context=".MainActivity"
         tools:layout_editor_absoluteX="149dp"
         tools:layout_editor_absoluteY="102dp" />
 
-    <RelativeLayout
-        android:id="@+id/relative"
+    <Button
+        android:id="@+id/select_destination"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
-        android:layout_marginTop="15dp"
-        android:background="@drawable/white_border"
+        android:layout_marginBottom="15dp"
+        android:text="Select a Destination"
+        android:textColor="#fff"
+        android:background="@drawable/black_border"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:id="@+id/ic_magnify"
-            android:layout_width="15dp"
-            android:layout_height="15dp"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="10dp"
-            android:imeOptions="actionSearch"
-            android:src="@drawable/ic_magnify" />
-
-        <AutoCompleteTextView
-            android:id="@+id/search"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignStart="@+id/ic_magnify"
-            android:layout_marginStart="10dp"
-            android:backgroundTint="@null"
-            android:hint="Enter Address, City or Zip Code"
-            android:textColor="#000"
-            android:textSize="15sp" />
-
-    </RelativeLayout>
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <ImageView
         android:id="@+id/ic_gps"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_below="@id/relative"
-        android:layout_marginTop="20dp"
+        android:layout_above="@id/select_destination"
+        android:layout_marginBottom="20dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_gps"
-        app:layout_constraintEnd_toEndOf="@+id/relative"
-        app:layout_constraintTop_toBottomOf="@+id/relative" />
-
-    <ImageView
-        android:id="@+id/place_picker"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_below="@id/relative"
-        android:layout_marginTop="20dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_map"
-        app:layout_constraintStart_toStartOf="@+id/relative"
-        app:layout_constraintTop_toBottomOf="@+id/relative" />
+        app:layout_constraintEnd_toEndOf="@+id/select_destination"
+        app:layout_constraintBottom_toTopOf="@+id/select_destination" />
 
     <ImageView
         android:id="@+id/ic_info"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_below="@id/relative"
-        android:layout_marginTop="80dp"
+        android:layout_above="@id/select_destination"
+        android:layout_marginBottom="20dp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_info"
-        app:layout_constraintStart_toStartOf="@+id/relative"
-        app:layout_constraintTop_toBottomOf="@+id/relative" />
+        app:layout_constraintStart_toStartOf="@+id/select_destination"
+        app:layout_constraintBottom_toTopOf="@+id/select_destination" />
 
 </android.support.constraint.ConstraintLayout>
 

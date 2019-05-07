@@ -17,17 +17,9 @@ public class Drawer extends AppCompatActivity
 
     public Drawer() {}
 
-    public Drawer(Toolbar toolbar, FloatingActionButton fab, DrawerLayout drawer, NavigationView navigationView) {
+    public Drawer(Toolbar toolbar, DrawerLayout drawer, NavigationView navigationView) {
 
         navigationView.setNavigationItemSelectedListener(this);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);

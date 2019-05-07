@@ -28,40 +28,40 @@ public class PlaceInfo {
         return name;
     }
 
-    public String getAddress() {
-        return address;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public Uri getWebsite() {
-        return website;
-    }
-
     public LatLng getLatLng() {
         return latLng;
     }
 
-    public float getRating() {
-        return rating;
-    }
-
     @Override
     public String toString() {
-        return "Place{" +
-                "name = '" + name + '\'' +
-                ", address = '" + address + '\'' +
-                ", phone = '" + phone + '\'' +
-                ", id = '" + id + '\'' +
-                ", website = " + website +
-                ", latlng = " + latLng +
-                ", rating = " + rating +
-                '}';
+
+        return ""
+                + checkNull("Name: ", name)
+                + checkNull("Address: ", address)
+                + checkNull("Phone No: ", phone)
+                + "Latitude: " + round(latLng.latitude, 4)
+                + "Longitude: " + round(latLng.longitude, 4)
+                + "Rating: " + rating;
+    }
+
+
+    public String checkNull(String identifier, String toCheck) {
+
+        if(toCheck == null || toCheck.equals(""))
+            return "";
+
+        return identifier + toCheck + "\n";
+    }
+
+
+    public static double round(double value, int places) {
+
+        if (places < 0)
+            throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
     }
 }
