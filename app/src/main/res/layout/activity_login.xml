@@ -92,26 +92,26 @@
     </LinearLayout>
 
     <EditText
-        android:id="@+id/nameInput"
+        android:id="@+id/emailInput"
         android:layout_width="209dp"
         android:layout_height="42dp"
         android:layout_marginStart="16dp"
         android:ems="10"
-        android:hint="@string/username"
-        android:inputType="textPersonName"
+        android:hint="@string/email1"
+        android:inputType="textEmailAddress"
         android:singleLine="true"
         android:textAlignment="viewStart"
         app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/nameHint"
+        app:layout_constraintStart_toEndOf="@+id/emailHint"
         app:layout_constraintTop_toTopOf="@+id/linearLayout2" />
 
     <TextView
-        android:id="@+id/nameHint"
+        android:id="@+id/emailHint"
         android:layout_width="145dp"
         android:layout_height="41dp"
         android:layout_marginStart="4dp"
-        android:text="@string/username1"
+        android:text="@string/email"
         android:textSize="30sp"
         app:layout_constraintStart_toStartOf="@+id/linearLayout2"
         app:layout_constraintTop_toTopOf="@+id/linearLayout" />

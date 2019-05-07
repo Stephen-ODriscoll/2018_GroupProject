@@ -20,7 +20,7 @@
             android:maxLines="1"
             android:textColor="#000"
             android:textSize="14sp"
-            android:textStyle="bold"></TextView>
+            android:textStyle="bold"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -30,7 +30,18 @@
             android:maxLines="10"
             android:textSize="14sp"
             android:textColor="#000"
-            ></TextView>
+            />
+
+        <Button
+            android:id="@+id/confirm"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/colorAccent"
+            android:ellipsize="end"
+            android:text="Confirm"
+            android:textColor="#000"
+            android:textSize="14sp" />
 
     </LinearLayout>
 

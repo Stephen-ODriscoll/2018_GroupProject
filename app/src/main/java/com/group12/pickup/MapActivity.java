@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private Marker marker;
@@ -162,16 +162,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void addButtons() {
 
-        Button logIn = findViewById(R.id.logIn);
-        logIn.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-
-                startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            }
-        });
-
         Button selectDestination = findViewById(R.id.select_destination);
         selectDestination.setOnClickListener(new View.OnClickListener() {
 
@@ -181,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
 
                 try {
-                    startActivityForResult(builder.build(MainActivity.this), PLACE_PICKER_REQUEST);
+                    startActivityForResult(builder.build(MapActivity.this), PLACE_PICKER_REQUEST);
 
                 } catch (Exception e) {
 
@@ -231,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             myLocation = latLng;
                         } else {
                             Log.d(TAG, "onComplete: current location is null");
-                            Toast.makeText(MainActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
