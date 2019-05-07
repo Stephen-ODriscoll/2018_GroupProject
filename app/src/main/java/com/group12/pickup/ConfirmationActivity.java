@@ -147,7 +147,7 @@ public class ConfirmationActivity extends AppCompatActivity {
                                     documentToAdd.put("price", String.valueOf(price));
                                     documentToAdd.put("tokenID", token.getId());
                                     documentToAdd.put("date", date);
-                                    documentToAdd.put("confirmed", "false");
+                                    documentToAdd.put("status", "unconfirmed");
 
                                     collectionReference.add(documentToAdd);
 

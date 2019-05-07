@@ -90,7 +90,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private final int CHANGE_LOCATION_REQUEST = 5;
     private final int ESTIMATE_REQUEST = 6;
 
-    private String confirmed = "false";
+    private String status = "unconfirmed";
+    private String previousStatus = "unconfirmed";
 
     private FirebaseFirestore database = FirebaseFirestore.getInstance();
     private CollectionReference collectionReference = database.collection("journeys");
@@ -448,6 +449,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             final String date = data.getStringExtra("date");
             boolean requested = data.getBooleanExtra("requested", false);
 
+            mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                @Override
+                public void onInfoWindowClick(Marker marker) {
+
+
+                }
+            });
+
             if (requested) {
 
                 (new Thread() {
@@ -455,7 +464,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     @Override
                     public void run() {
 
-                        while (confirmed.equals("false")) {
+                        while (!status.equals("completed")) {
+
+                            notify(status);
 
                             try {
                                 sleep(5000);
@@ -468,12 +479,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         }
 
                         Log.e("Checking", "Done");
-                        confirmed = "false";
+                        status = "unconfirmed";
 
                         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
                                 .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
-                                .setContentTitle("Trip Confirmed")
-                                .setContentText("Car is on its way")
+                                .setContentTitle("Trip Status")
+                                .setContentText("Arrived at Destination")
                                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                                 .setAutoCancel(true);
 
@@ -483,6 +494,43 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
                         notificationManager.notify(4, mBuilder.build());
 
+                    }
+
+                    private void notify(String status) {
+
+                        if(status.equals(previousStatus))
+                            return;
+
+                        previousStatus = status;
+                        createNotificationChannel();
+
+                        if(status.equals("confirmed")) {
+
+                            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
+                                    .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
+                                    .setContentTitle("Trip Status")
+                                    .setContentText("Car is en route to pickup")
+                                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                    .setAutoCancel(true);
+
+                            //Add notification to our manager and start it
+                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
+                            notificationManager.notify(4, mBuilder.build());
+                        }
+
+                        else if(status.equals("waiting")) {
+
+                            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext(), "Channel")
+                                    .setSmallIcon(android.support.v4.R.drawable.notification_icon_background)
+                                    .setContentTitle("Trip Status")
+                                    .setContentText("Car is waiting at pickup")
+                                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                    .setAutoCancel(true);
+
+                            //Add notification to our manager and start it
+                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
+                            notificationManager.notify(4, mBuilder.build());
+                        }
                     }
                 }).start(); // Start this thread
             }
@@ -694,7 +742,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                             if (task.getResult().size() <= 1) {
                                 try {
-                                    confirmed = (String) task.getResult().getDocuments().get(0).getData().get("confirmed");
+                                    status = (String) task.getResult().getDocuments().get(0).getData().get("status");
                                 } catch(Exception e) {
                                     Log.e("Checking Confirmation", "Failed");
                                 }
