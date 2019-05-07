@@ -36,6 +36,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -60,26 +61,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static java.lang.Thread.sleep;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private Marker marker;
+    private Marker pickupMarker;
+    private Marker destinationMarker;
     private static final float DEFAULT_ZOOM = 15f;
     private static final String TAG = "Map";
 
     private LatLng myLocation = null;
     private String distance;
     private String duration;
-    private Place place;
+    private Place pickupPlace;
+    private Place destinationPlace;
 
     private Boolean mLocationPermissionsGranted = false;
+    private Boolean track = true;
+    private Boolean estimate = false;
+
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int PLACE_PICKER_REQUEST = 2;
     private static final int CONFIRMATION_REQUEST = 3;
+    private final int CHANGE_LOCATION_REQUEST = 5;
+    private final int ESTIMATE_REQUEST = 6;
 
     private String confirmed = "false";
 
@@ -98,7 +107,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
 
-        new Drawer(toolbar, drawerLayout, navigationView);
+        new Drawer(toolbar, drawerLayout, navigationView, MapActivity.this);
 
         getLocationPermission();
     }
@@ -211,7 +220,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void onClick(View view) {
 
                 Log.d(TAG, "onClick: clicked gps icon");
-                getDeviceLocation();
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, DEFAULT_ZOOM));
             }
         });
     }
@@ -249,32 +258,41 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                 while(true) {
 
-                    final Task location = fusedLocationProviderClient.getLastLocation();
-                    location.addOnCompleteListener(new OnCompleteListener() {
-                        @Override
-                        public void onComplete(@NonNull Task task) {
-                            if (task.isSuccessful()) {
-                                Location currentLocation = (Location) task.getResult();
-                                myLocation = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                    if(track) {
 
-                                if(first) {
+                        final Task location = fusedLocationProviderClient.getLastLocation();
+                        location.addOnCompleteListener(new OnCompleteListener() {
+                            @Override
+                            public void onComplete(@NonNull Task task) {
+                                if (task.isSuccessful() && track) {
+                                    Location currentLocation = (Location) task.getResult();
+                                    try {
+                                        myLocation = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
-                                    Log.d(TAG, "moveCamera: moving the camera to: lat: " + myLocation.latitude + ", lng: " + myLocation.longitude);
-                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, DEFAULT_ZOOM));
-                                    first = false;
+                                    } catch(NullPointerException e) {
+
+                                            Log.e(TAG, "Currect Location Task Returned Null Pointer");
+                                    }
+
+
+                                    if(first) {
+
+                                        Log.d(TAG, "moveCamera: moving the camera to: lat: " + myLocation.latitude + ", lng: " + myLocation.longitude);
+                                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, DEFAULT_ZOOM));
+                                        first = false;
+                                    }
+
+                                } else {
+                                    Log.d(TAG, "onComplete: current location is null");
                                 }
-
-                            } else {
-                                Log.d(TAG, "onComplete: current location is null");
-                                makeToast("Unable to Get Current Location");
                             }
-                        }
-                    });
+                        });
 
-                    try {
-                        sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        try {
+                            sleep(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -283,28 +301,104 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
 
-    private void moveCamera(Place place, float zoom) {
+    public void changeLocation() {
+
+        //If we have already set our location this resets it
+        if(!track) {
+
+            track = true;
+            mMap.clear();
+            mMap.setMyLocationEnabled(true);
+            return;
+        }
+
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+        try {
+            startActivityForResult(builder.build(MapActivity.this), CHANGE_LOCATION_REQUEST);
+
+        } catch (Exception e) {
+
+            Log.e(TAG, "Google Play Services Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    private void setPickupMarker(Place place, float zoom) {
+
+        Log.d(TAG, "moveCamera: moving the camera to: " + place.getLatLng());
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), zoom));
+        mMap.setMyLocationEnabled(false);
+        mMap.clear();
+
+        track = false;
+        myLocation = place.getLatLng();
+        this.pickupPlace = place;
+
+        MarkerOptions options = new MarkerOptions()
+                .title(place.getName().toString())
+                .position(place.getLatLng())
+                .snippet("Alternate Pickup")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+
+        pickupMarker = mMap.addMarker(options);
+    }
+
+
+    public void setDestinationMarker(Place place, float zoom) {
 
         Log.d(TAG, "moveCamera: moving the camera to: " + place.getLatLng());
 
         WindowInfoAdapter windowInfo = new WindowInfoAdapter(this);
-        this.place = place;
+        this.destinationPlace = place;
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), zoom));
-        mMap.clear();
         mMap.setInfoWindowAdapter(windowInfo);
+        mMap.clear();
+
+        if(!track) {
+
+            MarkerOptions options = new MarkerOptions()
+                    .title(pickupPlace.getName().toString())
+                    .position(pickupPlace.getLatLng())
+                    .snippet("Alternate Pickup")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+
+            pickupMarker = mMap.addMarker(options);
+        }
 
         MarkerOptions options = new MarkerOptions()
                 .title(place.getName().toString())
                 .position(place.getLatLng());
 
-        marker = mMap.addMarker(options);
+        destinationMarker = mMap.addMarker(options);
 
         ArrayList<LatLng> points = new ArrayList<>();
         points.add(myLocation);
-        points.add(marker.getPosition());
+        points.add(destinationMarker.getPosition());
 
         makeRoute(points);
+    }
+
+
+    /****************************
+     *     Price Estimation     *
+     ****************************/
+
+    public void estimate() {
+
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+        try {
+            startActivityForResult(builder.build(MapActivity.this), ESTIMATE_REQUEST);
+
+        } catch (Exception e) {
+
+            Log.e(TAG, "Google Play Services Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 
@@ -320,7 +414,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             if (resultCode == RESULT_OK) {
 
                 Place place = PlacePicker.getPlace(this, data);
-                moveCamera(place, DEFAULT_ZOOM);
+                setDestinationMarker(place, DEFAULT_ZOOM);
+            }
+        }
+
+        else if (requestCode == CHANGE_LOCATION_REQUEST) {
+
+            if (resultCode == RESULT_OK) {
+
+                Place place = PlacePicker.getPlace(this, data);
+                setPickupMarker(place, DEFAULT_ZOOM);
+            }
+        }
+
+        else if(requestCode == ESTIMATE_REQUEST) {
+
+            if (resultCode == RESULT_OK) {
+
+                Place place = PlacePicker.getPlace(this, data);
+
+                ArrayList<LatLng> points = new ArrayList<>();
+                points.add(myLocation);
+                points.add(place.getLatLng());
+                estimate = true;
+
+                makeRoute(points);
             }
         }
 
@@ -363,7 +481,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                         //Add notification to our manager and start it
                         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
-                        notificationManager.notify(4, mBuilder.build());;
+                        notificationManager.notify(4, mBuilder.build());
 
                     }
                 }).start(); // Start this thread
@@ -471,7 +589,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             distance = result.get(0).get(0).get("distance");
             duration = result.get(0).get(0).get("duration");
-            marker.setSnippet("Distance: " + distance + "\nEstimated Time: " + duration);
+
+            if(estimate) {
+
+                int number = 4;
+
+                if(duration.contains("mins"))
+                    number = 5;
+
+                estimate = false;
+                makeToast("Estimated Price: €" + round(Double.valueOf(duration.substring(0, duration.length()-number)) * 1.25, 2));
+                return;
+            }
+
+            destinationMarker.setSnippet("Distance: " + distance + "\nEstimated Time: " + duration);
 
             //At least 2 minutes but not an hour or more
             if(duration.contains("mins") && !duration.contains("hour"))
@@ -484,7 +615,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                             Intent i = new Intent(MapActivity.this, ConfirmationActivity.class);
                             i.putExtra("Collection", addresses.get(0).getAddressLine(0));
-                            i.putExtra("Destination", place.getAddress());
+                            i.putExtra("Destination", destinationPlace.getAddress());
                             i.putExtra("Distance", distance);
                             i.putExtra("Duration", duration);
                             i.putExtra("Latitude", myLocation.latitude);
@@ -509,8 +640,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                 });
 
-            if(!marker.isInfoWindowShown())
-                marker.showInfoWindow();
+            if(!destinationMarker.isInfoWindowShown())
+                destinationMarker.showInfoWindow();
 
             for (int i = 1; i < result.size(); i++) {
                 points = new ArrayList();
@@ -535,6 +666,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             // Drawing polyline in the Google Map for the i-th route
             mMap.addPolyline(lineOptions);
         }
+    }
+
+
+    public static double round(double value, int places) {
+
+        if (places < 0) throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
     }
 
 

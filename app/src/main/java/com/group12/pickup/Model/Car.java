@@ -4,15 +4,19 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class Car {
 
+    private String license;
+    private String type;
     private String name;
     private LatLng position;
     private String status;
     private double distance;        //Kilometers
 
-    public Car(String name, String latitude, String longitude, String status, LatLng myLocation) {
+    public Car(String name, String license, String type, String latitude, String longitude, String status, LatLng myLocation) {
 
+        this.license = license;
         this.name = name;
         this.status = status;
+        this.type = type;
 
         Double lat = Double.parseDouble(latitude);
         Double lng = Double.parseDouble(longitude);
@@ -34,6 +38,18 @@ public class Car {
 
             return dist;
         }
+    }
+
+
+    public String getLicense() {
+
+        return license;
+    }
+
+
+    public String getType() {
+
+        return type;
     }
 
 

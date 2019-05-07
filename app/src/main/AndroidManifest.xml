@@ -51,6 +51,8 @@
         </activity>
         <activity android:name=".Drawer" />
         <activity android:name=".ConfirmationActivity" />
+        <activity android:name=".RegisterActivity" />
+        <activity android:name=".TripsActivity" />
     </application>
 
 </manifest>

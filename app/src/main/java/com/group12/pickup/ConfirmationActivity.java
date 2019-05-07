@@ -8,7 +8,9 @@ import android.os.Bundle;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,16 +28,22 @@ import com.stripe.android.model.Token;
 import com.stripe.android.view.CardInputWidget;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -46,10 +54,12 @@ import java.util.List;
 
 public class ConfirmationActivity extends AppCompatActivity {
 
+    private Car nearest = null;
     private LatLng myLocation;
     private TextView details;
     private String TAG = "Confirmation";
     private String estimatedWait = "";
+    private Spinner dropdown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +85,14 @@ public class ConfirmationActivity extends AppCompatActivity {
         TextView collection = findViewById(R.id.collection);
         TextView destination = findViewById(R.id.destination);
         details = findViewById(R.id.details);
+        dropdown = findViewById(R.id.spinner);
+
+        String[] items = new String[]{"Select Type", "5 Seater", "7 Seater"};
+        //create an adapter to describe how the items are displayed, adapters are used in several places in android.
+        //There are multiple variations of this, but this is the basic variant.
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items);
+        //set the spinners adapter to the previously created one.
+        dropdown.setAdapter(adapter);
 
         collection.setText(collectionDetails.replace(", ", ",\n"));
         destination.setText(destinationDetails.replace(", ", ",\n"));
@@ -96,6 +114,10 @@ public class ConfirmationActivity extends AppCompatActivity {
                     Toast.makeText(getBaseContext(),"Invalid Card Data",Toast.LENGTH_SHORT).show();
                 }
 
+                else if(dropdown.getSelectedItem().equals("Select Type")) {
+                    Toast.makeText(getBaseContext(),"Select Vehicle Type",Toast.LENGTH_SHORT).show();
+                }
+
                 else {
 
                     Stripe stripe = new Stripe(getBaseContext(), "pk_test_TYooMQauvdEDq54NiTphI7jx");
@@ -114,6 +136,8 @@ public class ConfirmationActivity extends AppCompatActivity {
 
                                     HashMap<String, String> documentToAdd = new HashMap<>();
 
+                                    documentToAdd.put("car", nearest.getName());
+                                    documentToAdd.put("type", nearest.getType());
                                     documentToAdd.put("user", user.getEmail());
                                     documentToAdd.put("collection", collectionDetails);
                                     documentToAdd.put("destination", destinationDetails);
@@ -126,6 +150,8 @@ public class ConfirmationActivity extends AppCompatActivity {
                                     documentToAdd.put("confirmed", "false");
 
                                     collectionReference.add(documentToAdd);
+
+                                    //addToRealtime(user, collectionDetails, destinationDetails, distance, duration, price, token, date);
 
                                     i.putExtra("requested", true);
                                     i.putExtra("user", user.getEmail());
@@ -188,15 +214,14 @@ public class ConfirmationActivity extends AppCompatActivity {
 
                 String[] temp = result.split("[,:\"{}]");    //,|:|"|\{|\}
                 ArrayList<String> lines = new ArrayList<>();
-                Car nearest = null;
 
                 for(int i = 0; i < temp.length; i++)
                     if(!temp[i].equals(""))
                         lines.add(temp[i]);
 
-                for(int i = 0; i < lines.size(); i+=7) {
+                for(int i = 0; i < lines.size(); i+=11) {
 
-                    Car car = new Car(lines.get(i), lines.get(i+2), lines.get(i+4), lines.get(i+6), myLocation);
+                    Car car = new Car(lines.get(i), lines.get(i+2), lines.get(i+4), lines.get(i+6), lines.get(i+8), lines.get(i+10), myLocation);
 
                     if(nearest == null || car.getDistance() < nearest.getDistance())
                         if(car.getStatus().equals("free"))

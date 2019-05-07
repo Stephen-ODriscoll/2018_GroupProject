@@ -21,15 +21,13 @@
         android:layout_width="259dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="52dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="40dp"
         android:text="@string/sign_in"
         android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@+id/register"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout3"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout3" />
 
     <TextView
         android:id="@+id/passwordHint"
@@ -63,11 +61,27 @@
         app:layout_constraintTop_toTopOf="@+id/linearLayout"></LinearLayout>
 
     <Button
+        android:id="@+id/signInGoogle"
+        android:layout_width="259dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Google Sign In"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/register"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/signIn" />
+
+    <Button
         android:id="@+id/register"
         android:layout_width="259dp"
         android:layout_height="55dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:text="@string/register"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/linearLayout"
@@ -77,17 +91,16 @@
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="371dp"
-        android:layout_height="324dp"
+        android:layout_height="374dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="160dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.666"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.851">
+        app:layout_constraintVertical_bias="1.0">
 
     </LinearLayout>
 

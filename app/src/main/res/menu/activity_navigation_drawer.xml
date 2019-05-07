@@ -13,9 +13,9 @@
             android:icon="@drawable/ic_menu_price"
             android:title="Price Calculator" />
         <item
-            android:id="@+id/nav_payments"
+            android:id="@+id/nav_trips"
             android:icon="@drawable/ic_menu_receipt"
-            android:title="Payments" />
+            android:title="Trips" />
         <item
             android:id="@+id/nav_review"
             android:icon="@drawable/ic_menu_review"
