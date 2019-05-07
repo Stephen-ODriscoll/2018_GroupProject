@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">PickUp</string>
     <string name="title_activity_maps">Map</string>
+    <string name="password">password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="password1">Password:</string>
+    <string name="register">Register</string>
+    <string name="username">username</string>
+    <string name="username1">Username:</string>
 </resources>
