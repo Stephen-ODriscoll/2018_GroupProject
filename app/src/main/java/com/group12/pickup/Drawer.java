@@ -12,6 +12,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 public class Drawer extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -65,20 +67,21 @@ public class Drawer extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_location) {
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        } else if (id == R.id.nav_price) {
 
         } else if (id == R.id.nav_payments) {
 
         } else if (id == R.id.nav_review) {
 
-        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_logout) {
 
+            FirebaseAuth.getInstance().signOut();
+            DrawerLayout drawer = findViewById(R.id.drawer_layout);
+            drawer.closeDrawer(GravityCompat.START);
         }
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 }

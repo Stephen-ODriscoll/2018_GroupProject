@@ -5,11 +5,11 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_camera"
+            android:id="@+id/nav_location"
             android:icon="@drawable/ic_menu_camera"
             android:title="Change Location" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_price"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Price Calculator" />
         <item
@@ -21,7 +21,7 @@
             android:icon="@drawable/ic_menu_manage"
             android:title="Rate/Review Us" />
         <item
-            android:id="@+id/nav_share"
+            android:id="@+id/nav_logout"
             android:icon="@drawable/ic_menu_share"
             android:title="Log Out" />
     </group>

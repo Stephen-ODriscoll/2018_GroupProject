@@ -1,22 +1,25 @@
 package com.group12.pickup.Model;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
+import com.group12.pickup.ConfirmationActivity;
+import com.group12.pickup.LoginActivity;
+import com.group12.pickup.MapActivity;
 import com.group12.pickup.R;
 
 public class WindowInfoAdapter implements GoogleMap.InfoWindowAdapter {
 
     private final View window;
-    private Context context;
 
     public WindowInfoAdapter(Context context) {
 
-        this.context = context;
         window = LayoutInflater.from(context).inflate(R.layout.info_window, null);
     }
 
@@ -48,6 +51,11 @@ public class WindowInfoAdapter implements GoogleMap.InfoWindowAdapter {
     public View getInfoContents(Marker marker) {
 
         renderWindow(marker);
+        return window;
+    }
+
+    public View getView() {
+
         return window;
     }
 }

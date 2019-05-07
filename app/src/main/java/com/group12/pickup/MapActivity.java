@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -48,6 +50,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+
+import static java.lang.Thread.sleep;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -55,7 +60,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Marker marker;
     private static final float DEFAULT_ZOOM = 15f;
     private static final String TAG = "Map";
+
     private LatLng myLocation = null;
+    private String distance;
+    private String duration;
+    private Place place;
 
     private Boolean mLocationPermissionsGranted = false;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -138,8 +147,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
+     * This is where we can add markers or lines, add listeners or move the camera.
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
@@ -202,29 +210,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void getDeviceLocation() {
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
 
-        FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        final FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         try {
             if (mLocationPermissionsGranted) {
 
-                final Task location = fusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "onComplete: found location!");
-                            Location currentLocation = (Location) task.getResult();
-                            LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-                            Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude);
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM));
-                            myLocation = latLng;
-                        } else {
-                            Log.d(TAG, "onComplete: current location is null");
-                            Toast.makeText(MapActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                updateLocation(fusedLocationProviderClient);
             }
         } catch (SecurityException e) {
             Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage());
@@ -232,13 +223,61 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
 
+    private void updateLocation(final FusedLocationProviderClient fusedLocationProviderClient) {
+
+        (new Thread() {
+
+            private boolean first = true;
+
+            @Override
+            public void run() {
+
+                while(true) {
+
+                    final Task location = fusedLocationProviderClient.getLastLocation();
+                    location.addOnCompleteListener(new OnCompleteListener() {
+                        @Override
+                        public void onComplete(@NonNull Task task) {
+                            if (task.isSuccessful()) {
+                                Location currentLocation = (Location) task.getResult();
+                                myLocation = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+                                if(first) {
+
+                                    Log.d(TAG, "moveCamera: moving the camera to: lat: " + myLocation.latitude + ", lng: " + myLocation.longitude);
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, DEFAULT_ZOOM));
+                                    first = false;
+                                }
+
+                            } else {
+                                Log.d(TAG, "onComplete: current location is null");
+                                Toast.makeText(MapActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+
+                    try {
+                        sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        }).start();
+    }
+
+
     private void moveCamera(Place place, float zoom) {
 
         Log.d(TAG, "moveCamera: moving the camera to: " + place.getLatLng());
 
+        WindowInfoAdapter windowInfo = new WindowInfoAdapter(this);
+        this.place = place;
+
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), zoom));
         mMap.clear();
-        mMap.setInfoWindowAdapter(new WindowInfoAdapter(this));
+        mMap.setInfoWindowAdapter(windowInfo);
 
         MarkerOptions options = new MarkerOptions()
                 .title(place.getName().toString())
@@ -266,7 +305,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             if (resultCode == RESULT_OK) {
 
                 Place place = PlacePicker.getPlace(this, data);
-
                 moveCamera(place, DEFAULT_ZOOM);
             }
         }
@@ -347,10 +385,46 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             ArrayList points;
             PolylineOptions lineOptions = new PolylineOptions();
+            final Geocoder geocoder = new Geocoder(getBaseContext(), Locale.getDefault());
 
-            String distance = result.get(0).get(0).get("distance");
-            String duration = result.get(0).get(0).get("duration");
-            marker.setSnippet("Distance: " + distance + "\nDuration: " + duration);
+            distance = result.get(0).get(0).get("distance");
+            duration = result.get(0).get(0).get("duration");
+            marker.setSnippet("Distance: " + distance + "\nEstimated Time: " + duration);
+
+            //At least 2 minutes but not an hour or more
+            if(duration.contains("mins") && !duration.contains("hour"))
+                mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                    @Override
+                    public void onInfoWindowClick(Marker marker) {
+
+                        try {
+                            List<Address> addresses = geocoder.getFromLocation(myLocation.latitude, myLocation.longitude, 1);
+
+                            Intent i = new Intent(MapActivity.this, ConfirmationActivity.class);
+                            i.putExtra("Collection", addresses.get(0).getAddressLine(0));
+                            i.putExtra("Destination", place.getAddress());
+                            i.putExtra("Distance", distance);
+                            i.putExtra("Duration", duration);
+                            i.putExtra("Latitude", myLocation.latitude);
+                            i.putExtra("Longitude", myLocation.longitude);
+
+                            startActivity(i);
+
+                        } catch (IOException e) {
+
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+            else
+                mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                    @Override
+                    public void onInfoWindowClick(Marker marker) {
+
+                        Toast.makeText(getBaseContext(),"Journey too Short or too Long",Toast.LENGTH_SHORT).show();
+                    }
+                });
 
             if(!marker.isInfoWindowShown())
                 marker.showInfoWindow();
